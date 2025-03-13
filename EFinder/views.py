@@ -3,6 +3,6 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 # Temporal Home Page View
-@login_required  
+#@login_required
 def home(request):
     return render(request, 'home.html')
