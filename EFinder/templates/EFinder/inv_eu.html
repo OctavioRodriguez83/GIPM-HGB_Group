@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block title %}Inv EU{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Coloca los archivos CSV en su respectivo lugar</h2>
+{#    <form method="post" enctype="multipart/form-data" action="{% url 'upload_csv' %}">#}
+    <form>
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="productos_csv" class="form-label">Productos CSV</label>
+            <input class="form-control" type="file" id="productos_csv" name="productos_csv" accept=".csv" required>
+        </div>
+        <div class="mb-3">
+            <label for="productos_duplicados_csv" class="form-label">Productos Duplicados FF CSV</label>
+            <input class="form-control" type="file" id="productos_duplicados_csv" name="productos_duplicados_csv" accept=".csv" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Subir y procesar</button>
+    </form>
+</div>
+{% endblock %}

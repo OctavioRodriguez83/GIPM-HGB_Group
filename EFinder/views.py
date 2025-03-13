@@ -6,3 +6,6 @@ from django.contrib.auth.decorators import login_required
 #@login_required
 def home(request):
     return render(request, 'home.html')
+
+def inv_eu(request):
+    return render(request, 'EFinder/inv_eu.html')

@@ -21,4 +21,6 @@ from . import views
 
 urlpatterns = [
     path('EFinder/', views.home, name='home'),
+    path('inv_eu/', views.inv_eu, name='inv_eu'),
+
 ]
