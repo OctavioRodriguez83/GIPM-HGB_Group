@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventario{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Inventario</h2>
+
+    <!-- Botón de descarga -->
+    <div class="mb-3">
+        <a href="{% static 'data/productos_combinados.csv' %}" download class="btn btn-success">
+            Descargar CSV
+        </a>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div id="loadingIndicator" class="alert alert-info" style="display: none;">
+        Cargando CSV...
+    </div>
+
+    <!-- Barra de búsqueda y paginación manual -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
+        </div>
+        <div class="col-md-2">
+            <button id="searchButton" class="btn btn-secondary">Buscar</button>
+        </div>
+        <div class="col-md-2">
+            <input type="number" min="1" id="pageNumberInput" class="form-control" placeholder="Ir a página...">
+        </div>
+        <div class="col-md-2">
+            <button id="goPageButton" class="btn btn-secondary">Ir</button>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered" id="inventoryTable">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Descripción</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryTableBody">
+                <!-- Filas insertadas por JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Controles de paginación -->
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <button id="prevPage" class="btn btn-primary">Anterior</button>
+        <span id="pageInfo"></span>
+        <button id="nextPage" class="btn btn-primary">Siguiente</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tableBody = document.getElementById("inventoryTableBody");
+    const loadingIndicator = document.getElementById("loadingIndicator");
+
+    // Elementos para la paginación
+    const prevPageBtn = document.getElementById("prevPage");
+    const nextPageBtn = document.getElementById("nextPage");
+    const pageInfo = document.getElementById("pageInfo");
+
+    // Elementos para búsqueda
+    const searchInput = document.getElementById("searchInput");
+    const searchButton = document.getElementById("searchButton");
+
+    // Elementos para "ir a página"
+    const pageNumberInput = document.getElementById("pageNumberInput");
+    const goPageButton = document.getElementById("goPageButton");
+
+    // Configuración
+    let currentPage = 1;
+    const rowsPerPage = 10;
+
+    // Almacenamos dos arreglos:
+    // allDataRows = datos originales
+    // dataRows = datos filtrados para mostrar
+    let allDataRows = [];
+    let dataRows = [];
+
+    // Mostrar indicador de carga
+    loadingIndicator.style.display = "block";
+
+    // 1. Cargar el CSV
+    fetch("{% static 'data/productos_combinados.csv' %}")
+        .then(response => response.text())
+        .then(data => {
+            loadingIndicator.style.display = "none"; // Ocultamos indicador
+            // Convertir CSV a array de filas
+            const rows = data.split("\n").slice(1).filter(row => row.trim());
+            allDataRows = rows; // Guardamos todos los datos
+            dataRows = [...allDataRows]; // Copiamos a dataRows
+            renderTablePage(currentPage);
+        })
+        .catch(error => {
+            loadingIndicator.style.display = "none";
+            console.error("Error loading CSV:", error);
+        });
+
+    // 2. Renderizar una página de la tabla
+    function renderTablePage(page) {
+        tableBody.innerHTML = "";
+        // Calcular índices de inicio y fin
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageRows = dataRows.slice(start, end);
+
+        // Insertar filas en la tabla
+        pageRows.forEach(row => {
+            if (row.trim()) {
+                const cols = row.split(",");
+                const tr = document.createElement("tr");
+                cols.forEach(col => {
+                    const td = document.createElement("td");
+                    td.textContent = col.trim();
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            }
+        });
+
+        // Actualizar info de la paginación
+        currentPage = page;
+        pageInfo.textContent = `Página ${currentPage} de ${Math.ceil(dataRows.length / rowsPerPage)}`;
+
+        // Habilitar/deshabilitar botones
+        prevPageBtn.disabled = (currentPage === 1);
+        nextPageBtn.disabled = (currentPage >= Math.ceil(dataRows.length / rowsPerPage));
+    }
+
+    // 3. Evento para Anterior y Siguiente
+    prevPageBtn.addEventListener("click", function () {
+        if (currentPage > 1) {
+            renderTablePage(currentPage - 1);
+        }
+    });
+
+    nextPageBtn.addEventListener("click", function () {
+        if (currentPage < Math.ceil(dataRows.length / rowsPerPage)) {
+            renderTablePage(currentPage + 1);
+        }
+    });
+
+    // 4. Evento para Búsqueda
+    // Filtra los datos en allDataRows y los copia a dataRows
+    searchButton.addEventListener("click", function () {
+        const query = searchInput.value.toLowerCase().trim();
+        if (!query) {
+            // Si no hay texto, mostrar todos los datos
+            dataRows = [...allDataRows];
+        } else {
+            // Filtrar
+            dataRows = allDataRows.filter(row => row.toLowerCase().includes(query));
+        }
+        // Reiniciamos a la página 1
+        renderTablePage(1);
+    });
+
+    // 5. Evento para "Ir a página"
+    goPageButton.addEventListener("click", function () {
+        const desiredPage = parseInt(pageNumberInput.value, 10);
+        if (!isNaN(desiredPage) && desiredPage > 0 && desiredPage <= Math.ceil(dataRows.length / rowsPerPage)) {
+            renderTablePage(desiredPage);
+        } else {
+            alert("Número de página inválido");
+        }
+    });
+});
+</script>
+{% endblock %}

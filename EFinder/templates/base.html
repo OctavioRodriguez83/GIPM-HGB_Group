@@ -79,6 +79,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventario' %}">
+                            <i class="mdi mdi-warehouse menu-icon"></i>
+                            <span class="menu-title">Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="mercadolibre.html">
                             <i class="mdi mdi-cart menu-icon"></i>
                             <span class="menu-title">Mercado Libre</span>
@@ -123,6 +129,7 @@
     <!-- plugins:js -->
     <script src="{% static 'assets/vendors/js/vendor.bundle.base.js' %}"></script>
     <script src="{% static 'assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js' %}"></script>
+
     <!-- endinject -->
     <!-- Plugin js for this page -->
     <script src="{% static 'assets/vendors/chart.js/chart.umd.js' %}"></script>

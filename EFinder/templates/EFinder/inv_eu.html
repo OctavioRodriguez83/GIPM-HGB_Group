@@ -7,121 +7,16 @@
 <div class="container mt-5">
     <h2>Coloca los archivos CSV en su respectivo lugar</h2>
     <form method="post" enctype="multipart/form-data" action="{% url 'upload_csv' %}">
-    {% csrf_token %}
-    <div class="mb-3">
-        <label for="productos_csv" class="form-label">Productos CSV</label>
-        <input class="form-control" type="file" id="productos_csv" name="productos" accept=".csv" required>
-    </div>
-    <div class="mb-3">
-        <label for="productos_duplicados_csv" class="form-label">Productos Duplicados FF CSV</label>
-        <input class="form-control" type="file" id="productos_duplicados_csv" name="productos_duplicadosFF" accept=".csv" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Subir y procesar</button>
-</form>
-</div>
-
-<!-- Modal de carga -->
-<div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="loadingModalLabel">Procesando archivos...</h5>
-      </div>
-      <div class="modal-body">
-        <p id="loadingMessage">Iniciando...</p>
-        <div class="progress">
-          <div id="loadingProgress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="productos_csv" class="form-label">Productos CSV</label>
+            <input class="form-control" type="file" id="productos_csv" name="productos" accept=".csv" required>
         </div>
-        <div id="finalPathContainer" class="mt-3" style="display:none;">
-            <label for="finalPath" class="form-label">Carpeta creada:</label>
-            <input type="text" id="finalPath" class="form-control" readonly>
-            <button id="copyButton" class="btn btn-secondary mt-2">Copiar ruta</button>
+        <div class="mb-3">
+            <label for="productos_duplicados_csv" class="form-label">Productos Duplicados FF CSV</label>
+            <input class="form-control" type="file" id="productos_duplicados_csv" name="productos_duplicadosFF" accept=".csv" required>
         </div>
-      </div>
-    </div>
-  </div>
+        <button type="submit" class="btn btn-primary">Subir y procesar</button>
+    </form>
 </div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("uploadForm");
-    const modalElem = document.getElementById("loadingModal");
-    const modal = new bootstrap.Modal(modalElem, { backdrop: 'static', keyboard: false });
-    const loadingMessage = document.getElementById("loadingMessage");
-    const loadingProgress = document.getElementById("loadingProgress");
-    const finalPathContainer = document.getElementById("finalPathContainer");
-    const finalPathInput = document.getElementById("finalPath");
-    const copyButton = document.getElementById("copyButton");
-
-    form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        document.querySelectorAll("input, button").forEach(el => el.disabled = true);
-        modal.show();
-
-        const formData = new FormData(form);
-
-        fetch(form.action, {
-            method: "POST",
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) throw new Error("Error en la solicitud");
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-            let chunks = "";
-            function read() {
-                return reader.read().then(({ done, value }) => {
-                    if (done) return;
-                    chunks += decoder.decode(value, { stream: true });
-                    const lines = chunks.split("\n");
-                    for (let i = 0; i < lines.length - 1; i++) {
-                        processLine(lines[i]);
-                    }
-                    chunks = lines[lines.length - 1];
-                    return read();
-                });
-            }
-            return read();
-        })
-        .then(() => {
-            // Cuando termine el stream, redirige a inv_eu.html
-            setTimeout(() => {
-                modal.hide();
-                window.location.href = "{% url 'inv_eu' %}";
-            }, 2000);
-        })
-        .catch(error => {
-            modal.hide();
-            console.error("Error:", error);
-            alert("Error: " + error.message);
-            document.querySelectorAll("input, button").forEach(el => el.disabled = false);
-        });
-    });
-
-    function processLine(line) {
-        if (!line.trim()) return;
-        // Si la línea inicia con "FINAL:" se trata del mensaje final
-        if (line.startsWith("FINAL:")) {
-            const finalMsg = line.substring(6).trim();
-            loadingMessage.innerText = finalMsg;
-            finalPathInput.value = finalMsg.replace("Revisa la carpeta: ", "");
-            finalPathContainer.style.display = "block";
-            // Actualiza la barra de progreso al 100%
-            loadingProgress.style.width = "100%";
-        } else {
-            loadingMessage.innerText = line;
-            // Opcional: Si en tus mensajes incluyeras porcentajes, podrías actualizar la barra.
-        }
-    }
-
-    copyButton.addEventListener("click", function () {
-        finalPathInput.select();
-        document.execCommand("copy");
-        copyButton.innerText = "¡Copiado!";
-        setTimeout(() => {
-            copyButton.innerText = "Copiar ruta";
-        }, 2000);
-    });
-});
-</script>
 {% endblock %}

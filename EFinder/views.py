@@ -5,6 +5,7 @@ from datetime import datetime
 from django.http import StreamingHttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+import shutil
 
 # ---------------------------
 # Funciones de Utilidad
@@ -33,6 +34,9 @@ def home(request):
 
 def inv_eu(request):
     return render(request, 'EFinder/inv_eu.html')
+
+def inventario(request):
+    return render(request, 'EFinder/inventario.html')
 
 # ---------------------------
 # Funciones para el procesamiento de archivos CSV
@@ -220,35 +224,51 @@ def merge_csv_files(file1, file2, output_file, log_file):
     counter_file1 = 0
     counter_file2 = 0
     total_written = 0
+
     with open(log_file, "a", encoding="utf-8") as logf:
         logf.write("=== Merge CSV Files Log ===\n")
-    with open(output_file, "w", newline="", encoding="utf-8") as outfile, \
-            open(log_file, "a", encoding="utf-8") as logf:
-        writer = csv.writer(outfile)
-        # Procesar primer archivo
-        with open(file1, "r", encoding="utf-8") as f1:
-            reader1 = csv.reader(f1)
-            header = next(reader1)
-            writer.writerow(header)
-            logf.write(f"Header from {file1}: {header}\n")
-            for row in reader1:
-                writer.writerow(row)
-                counter_file1 += 1
-                total_written += 1
-        logf.write(f"Records from {file1}: {counter_file1}\n")
-        # Procesar segundo archivo (se descarta la cabecera)
-        with open(file2, "r", encoding="utf-8") as f2:
-            reader2 = csv.reader(f2)
-            header2 = next(reader2)
-            logf.write(f"Skipped header from {file2}: {header2}\n")
-            for row in reader2:
-                writer.writerow(row)
-                counter_file2 += 1
-                total_written += 1
-        logf.write(f"Records from {file2}: {counter_file2}\n")
-        logf.write(f"Total records merged: {total_written}\n")
-        logf.write("Merge completed successfully.\n\n")
-    return output_file
+        logf.write(f"Input file 1: {file1}\n")
+        logf.write(f"Input file 2: {file2}\n")
+
+    with open(file1, 'r', encoding='utf-8') as f1, \
+            open(file2, 'r', encoding='utf-8') as f2, \
+            open(output_file, 'w', newline='', encoding='utf-8') as out_f:
+
+        reader1 = csv.reader(f1)
+        reader2 = csv.reader(f2)
+        writer = csv.writer(out_f)
+
+        # Escribir encabezado desde el primer archivo
+        header1 = next(reader1)
+        header2 = next(reader2)
+        writer.writerow(header1)
+
+        # Leer y escribir datos del primer archivo
+        for row in reader1:
+            writer.writerow(row)
+            counter_file1 += 1
+
+        # Leer y escribir datos del segundo archivo
+        for row in reader2:
+            writer.writerow(row)
+            counter_file2 += 1
+
+        total_written = counter_file1 + counter_file2
+
+    with open(log_file, "a", encoding="utf-8") as logf:
+        logf.write(f"Rows from file1: {counter_file1}\n")
+        logf.write(f"Rows from file2: {counter_file2}\n")
+        logf.write(f"Total rows written: {total_written}\n")
+        logf.write(f"Output file: {output_file}\n\n")
+
+    # Guardar el archivo en EFinder/static/data/
+    static_data_path = os.path.join("EFinder", "static", "data", "productos_combinados.csv")
+    shutil.move(output_file, static_data_path)
+
+    with open(log_file, "a", encoding="utf-8") as logf:
+        logf.write(f"Final CSV saved in: {static_data_path}\n\n")
+
+    return static_data_path
 
 
 # ---------------------------
